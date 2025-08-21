@@ -1,9 +1,10 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request, Response
 from flask_cors import CORS
 import os
 import logging
 import sys
 import argparse
+import json
 
 # Configure logging
 logging.basicConfig(
@@ -16,13 +17,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Import blueprints
+# Import blueprints and services
 from agent_routes import agent_bp
 import personas
+from services import AIService
+from user_api_service import UserAPIService
 
 # Create Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+# Initialize AI services
+ai_service = AIService()
+user_api_service = UserAPIService()
 
 # Register blueprints
 app.register_blueprint(agent_bp, url_prefix='/api')
@@ -78,6 +85,111 @@ def list_templates():
         }
     ]
     return jsonify(templates)
+
+# Models endpoint
+@app.route('/api/models', methods=['GET'])
+def list_models():
+    """List available models"""
+    models = user_api_service.list_available_models()
+    return jsonify(models)
+
+# Chat endpoint with user-provided API key
+@app.route('/api/chat-with-key', methods=['POST'])
+def chat_with_key():
+    """Handle chat messages with user-provided API key"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+        
+        message = data.get("message")
+        persona_id = data.get("personaId", "synapse")
+        api_key = data.get("apiKey")
+        model = data.get("model", "microsoft/DialoGPT-large")
+        
+        if not message:
+            return jsonify({"error": "Message is required"}), 400
+            
+        if not api_key:
+            return jsonify({"error": "API key is required"}), 400
+        
+        # Get system instruction for the persona
+        system_instruction = personas.get_system_instruction(persona_id)
+        
+        # Generate response using the user-provided API key
+        response = user_api_service.generate_response_with_key(
+            api_key=api_key,
+            system_instruction=system_instruction,
+            message=message,
+            model=model
+        )
+        
+        return jsonify({"response": response})
+        
+    except Exception as e:
+        logger.error(f"Error in chat-with-key endpoint: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# Chat endpoint with server-configured API key
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    """Handle chat messages"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+        
+        message = data.get("message")
+        persona_id = data.get("personaId", "synapse")
+        
+        if not message:
+            return jsonify({"error": "Message is required"}), 400
+        
+        # Get system instruction for the persona
+        system_instruction = personas.get_system_instruction(persona_id)
+        
+        # Generate response using the AI service
+        def generate():
+            try:
+                import asyncio
+                # For simplicity in this Flask app, we'll use the sync version
+                from huggingface_service import HuggingFaceService
+                hf_service = HuggingFaceService()
+                response = hf_service.generate_response(system_instruction, message)
+                yield response
+            except Exception as e:
+                yield f"Error: {str(e)}"
+        
+        return Response(generate(), mimetype='text/plain')
+        
+    except Exception as e:
+        logger.error(f"Error in chat endpoint: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# API key validation endpoint
+@app.route('/api/validate-key', methods=['POST'])
+def validate_key():
+    """Validate a Hugging Face API key"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+        
+        api_key = data.get("apiKey")
+        
+        if not api_key:
+            return jsonify({"error": "API key is required"}), 400
+        
+        is_valid = user_api_service.validate_api_key(api_key)
+        
+        return jsonify({"valid": is_valid})
+        
+    except Exception as e:
+        logger.error(f"Error in validate-key endpoint: {e}")
+        return jsonify({"error": str(e)}), 500
 
 # Error handlers
 @app.errorhandler(404)

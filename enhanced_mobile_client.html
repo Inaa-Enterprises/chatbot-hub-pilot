@@ -182,6 +182,36 @@
             border: 1px solid var(--error);
             color: var(--error);
         }
+        
+        .status-warning {
+            background: rgba(255, 152, 0, 0.2);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+        }
+        
+        /* Hidden sections */
+        .hidden {
+            display: none;
+        }
+        
+        /* API Key section */
+        .api-key-section {
+            background: rgba(255, 152, 0, 0.1);
+            border: 1px solid var(--warning);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .api-key-section h3 {
+            color: var(--warning);
+            margin-bottom: 10px;
+        }
+        
+        /* Model selector */
+        .model-selector {
+            margin: 15px 0;
+        }
 
         /* Chat container */
         .chat-container {
@@ -489,35 +519,32 @@
             </div>
             
             <div class="card">
+                <h2 class="card-title">👤 Personas</h2>
+                <div class="personas-grid" id="personasContainer">
+                    <!-- Personas will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="card">
                 <h2 class="card-title">💬 Chat</h2>
                 <div class="chat-container" id="chatContainer">
                     <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
                         <p>Connect to your Synapse backend to start chatting</p>
                     </div>
                 </div>
-            </div>
-            
-            <div class="card">
-                <h2 class="card-title">👤 Personas</h2>
-                <div class="personas-grid" id="personasContainer">
-                    <!-- Personas will be loaded here -->
+                <div class="input-container" style="margin-top: 15px;">
+                    <textarea 
+                        id="messageInput" 
+                        class="message-input" 
+                        placeholder="Type your message..." 
+                        disabled
+                    ></textarea>
+                    <button id="sendBtn" class="btn btn-primary send-button" disabled>
+                        ➤
+                    </button>
                 </div>
             </div>
         </main>
-        
-        <div class="input-area">
-            <div class="input-container">
-                <textarea 
-                    id="messageInput" 
-                    class="message-input" 
-                    placeholder="Type your message..." 
-                    disabled
-                ></textarea>
-                <button id="sendBtn" class="btn btn-primary send-button" disabled>
-                    ➤
-                </button>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -525,6 +552,13 @@
         const backendUrlInput = document.getElementById('backendUrl');
         const connectBtn = document.getElementById('connectBtn');
         const connectionStatus = document.getElementById('connectionStatus');
+        const apiKeyToggle = document.getElementById('apiKeyToggle');
+        const apiKeySection = document.getElementById('apiKeySection');
+        const apiKeyInput = document.getElementById('apiKey');
+        const validateKeyBtn = document.getElementById('validateKeyBtn');
+        const apiKeyStatus = document.getElementById('apiKeyStatus');
+        const modelSelect = document.getElementById('modelSelect');
+        const loadModelsBtn = document.getElementById('loadModelsBtn');
         const chatContainer = document.getElementById('chatContainer');
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
@@ -534,11 +568,16 @@
         let isConnected = false;
         let selectedPersona = 'synapse';
         let personas = [];
+        let models = [];
+        let apiKeyValid = false;
         
         // Initialize when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
             // Set up event listeners
             connectBtn.addEventListener('click', connectToBackend);
+            apiKeyToggle.addEventListener('click', toggleApiKeySection);
+            validateKeyBtn.addEventListener('click', validateApiKey);
+            loadModelsBtn.addEventListener('click', loadModels);
             sendBtn.addEventListener('click', sendMessage);
             
             messageInput.addEventListener('keydown', (e) => {
@@ -646,13 +685,31 @@
             });
         }
         
+        // Toggle API key section visibility
+        function toggleApiKeySection() {
+            if (apiKeySection.classList.contains('hidden')) {
+                apiKeySection.classList.remove('hidden');
+                apiKeyToggle.textContent = 'Hide';
+            } else {
+                apiKeySection.classList.add('hidden');
+                apiKeyToggle.textContent = 'Show';
+            }
+        }
+        
         // Send message
         async function sendMessage() {
             const message = messageInput.value.trim();
+            const apiKey = apiKeyInput.value.trim();
+            const model = modelSelect.value;
             
             if (!message) return;
             if (!isConnected) {
-                showStatus('Please connect to backend first', 'error');
+                showStatus('connectionStatus', 'Please connect to backend first', 'error');
+                return;
+            }
+            
+            if (!apiKeyValid) {
+                showStatus('apiKeyStatus', 'Please validate your API key first', 'error');
                 return;
             }
             
@@ -670,47 +727,37 @@
             showTypingIndicator();
             
             try {
-                // In a real implementation, you would call your chat endpoint here
-                // For now, we'll simulate a response with a delay
+                // Call the chat-with-key endpoint
+                const backendUrl = backendUrlInput.value.trim();
+                const response = await fetch(`${backendUrl}/api/chat-with-key`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        personaId: selectedPersona,
+                        apiKey: apiKey,
+                        model: model
+                    })
+                });
                 
-                // Simulate network delay
-                await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
                 
                 // Remove typing indicator
                 removeTypingIndicator();
                 
-                // Generate simulated response based on persona
-                const response = generateResponse(message, currentPersona);
-                addMessage('ai', response, currentPersona.name, currentPersona.icon);
+                // Add AI response to chat
+                addMessage('ai', data.response, currentPersona.name, currentPersona.icon);
                 
             } catch (error) {
                 removeTypingIndicator();
                 addMessage('ai', `Sorry, I encountered an error: ${error.message}`, 'System', '⚠️');
             }
-        }
-        
-        // Generate simulated response
-        function generateResponse(message, persona) {
-            const responses = {
-                'synapse': [
-                    `I understand you're asking about "${message}". As Synapse, I can help with that. What specifically would you like to know?`,
-                    `That's an interesting question about "${message.substring(0, 20)}...". As your core AI assistant, I'd suggest considering multiple perspectives on this topic.`,
-                    `Thanks for your message about "${message.substring(0, 20)}...". I'm analyzing your request and will provide a comprehensive response shortly.`
-                ],
-                'tutor': [
-                    `Great question about "${message}"! As your AI Tutor, let me break this down simply. First, we need to understand the basics...`,
-                    `I see you're interested in "${message}". As a tutor, I believe in explaining concepts clearly. Let's approach this step by step.`,
-                    `That's a wonderful inquiry about "${message}"! As your patient tutor, I'll explain this concept in digestible parts.`
-                ],
-                'content-creator': [
-                    `Interesting! You want to explore "${message}". As a Content Creator, I can help craft engaging material around this topic. Let's think about the angle...`,
-                    `Ooh, "${message}" is a fantastic subject! As your creative assistant, I can generate compelling content formats for this. What type of content were you thinking?`,
-                    `I love that idea about "${message}"! As a creative mind, I can help you develop unique content strategies around this theme.`
-                ]
-            };
-            
-            const personaResponses = responses[persona.id] || responses['synapse'];
-            return personaResponses[Math.floor(Math.random() * personaResponses.length)];
         }
         
         // Add message to chat
@@ -772,14 +819,15 @@
         }
         
         // Show status message
-        function showStatus(message, type) {
-            connectionStatus.innerHTML = `<div class="status status-${type}">${message}</div>`;
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status status-${type}">${message}</div>`;
             
-            // Auto-hide success messages after 3 seconds
+            // Auto-hide success messages after 5 seconds
             if (type === 'success') {
                 setTimeout(() => {
-                    connectionStatus.innerHTML = '';
-                }, 3000);
+                    element.innerHTML = '';
+                }, 5000);
             }
         }
         

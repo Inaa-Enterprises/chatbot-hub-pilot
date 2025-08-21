@@ -11,12 +11,14 @@ A Flask-based backend server that integrates Flowise and LangGraph functionality
 - **Chat Interface**: Support for autopilot and co-pilot modes
 - **Personas**: Pre-configured AI personalities
 - **Templates**: Ready-to-use content templates
+- **Multiple AI Providers**: Support for Hugging Face, Google Gemini, and Vicuna
 
 ### Mobile Client Features
 - **Universal Device Support**: Works on all mobile devices including foldable phones
 - **Responsive Design**: Automatically adjusts to any screen size
 - **Portrait and Landscape**: Optimized for both orientations
 - **Touch-Friendly Interface**: Appropriate sizing for all touch interactions
+- **User-Provided API Keys**: Users can enter their own Hugging Face API keys
 - **Cyberpunk Aesthetics**: Dark theme with gradient accents
 
 ## Quick Start
@@ -33,16 +35,27 @@ A Flask-based backend server that integrates Flowise and LangGraph functionality
    - Runtime: `Python 3`
    - Build Command: `pip install -r requirements.txt`
    - Start Command: `gunicorn main:app`
-6. Click "Create Web Service"
-7. Wait 5-10 minutes for deployment to complete
-8. Note the URL provided (e.g., `https://synapse-backend-xxxx.onrender.com`)
+6. Add environment variables:
+   - `HUGGING_FACE_API_KEY`: Your Hugging Face API key
+   - `LLM_PROVIDER`: `huggingface` (to use Hugging Face models)
+7. Click "Create Web Service"
+8. Wait 5-10 minutes for deployment to complete
+9. Note the URL provided (e.g., `https://synapse-backend-xxxx.onrender.com`)
 
-### 2. Use the Mobile Client
+### 2. Get Hugging Face API Key
+1. Go to [huggingface.co](https://huggingface.co)
+2. Sign up for a free account
+3. Go to your profile → Settings → Access Tokens
+4. Create a new token with "Read" permissions
+5. Copy the token for use in the mobile client
+
+### 3. Use the Mobile Client
 1. Email `enhanced_mobile_client.html` to yourself
 2. Open the email on your mobile device
 3. Download and open the HTML file in any mobile browser
 4. Enter your deployed backend URL
-5. Start chatting with different AI personas!
+5. Enter your Hugging Face API key in the mobile client
+6. Start chatting with different AI personas!
 
 ## API Endpoints
 
@@ -51,6 +64,7 @@ A Flask-based backend server that integrates Flowise and LangGraph functionality
 - `GET /health` - Detailed health status
 - `GET /api/personas` - List available personas
 - `GET /api/templates` - List available templates
+- `POST /api/chat` - Chat with AI using personas
 
 ### Flowise Endpoints
 - `GET /api/flows` - List available flows
@@ -79,7 +93,17 @@ A Flask-based backend server that integrates Flowise and LangGraph functionality
 - `GET /api/sessions` - List sessions
 
 ### Chat Endpoints
-- `POST /api/chat` - Handle chat messages with autopilot/copilot support
+- `POST /api/chat` - Send a message to the AI with a specific persona (uses server-configured API key)
+- `POST /api/chat-with-key` - Send a message to the AI with a user-provided API key
+- `POST /api/validate-key` - Validate a user-provided API key
+
+Example request:
+```json
+{
+  "message": "Hello, how are you?",
+  "personaId": "synapse"
+}
+```
 
 ## Personas
 
@@ -103,12 +127,33 @@ The mobile client ([enhanced_mobile_client.html](file:///home/ali-asghar-rao/Doc
 - Dynamic persona selection
 - Real-time chat interface
 
+## AI Providers
+
+### Hugging Face (Default & Free)
+- Uses the free Hugging Face Inference API
+- No credit card required
+- Multiple models available
+- Users can provide their own API keys directly in the mobile client
+
+### Google Gemini (Optional)
+- Requires Google Cloud account
+- May require billing setup (but has free tier)
+- Set `LLM_PROVIDER=gemini`, `GCP_PROJECT_ID=your_project`, and authenticate with Google Cloud
+
+### Vicuna (Placeholder)
+- For local LLM deployment
+- Set `LLM_PROVIDER=vicuna`
+
 ## Development
 
 ### Running Locally
 ```bash
 # Install dependencies
 pip install -r requirements.txt
+
+# Set environment variables
+export HUGGING_FACE_API_KEY=your_hugging_face_key
+export LLM_PROVIDER=huggingface
 
 # Run the server
 python run.py [--debug] [--port PORT]
@@ -136,6 +181,7 @@ For production deployments, you may need to set:
 1. **Application Error on Render**: Check logs in Render dashboard
 2. **Can't Connect from Mobile**: Verify URL uses https:// and is accessible
 3. **Personas Not Loading**: Check that backend is running and accessible
+4. **AI Not Responding**: Verify Hugging Face API key is set correctly
 
 ### Support
 For issues, check the [Render documentation](https://render.com/docs) or open an issue on this repository.

@@ -1,0 +1,16 @@
+# Nixpacks configuration for Railway
+# This tells Railway to build only the Python backend, ignoring the frontend
+
+[phases.setup]
+commands = ["echo 'Setting up Python environment'"]
+
+[phases.install]
+commands = [
+    "pip install -r requirements.txt"
+]
+
+[phases.build]
+commands = []
+
+[start]
+cmd = "gunicorn main:app"

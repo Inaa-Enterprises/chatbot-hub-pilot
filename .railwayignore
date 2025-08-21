@@ -1,0 +1,44 @@
+# Ignore all frontend-related files for Railway deployment
+# This ensures Railway only builds the Python backend
+
+# Node.js files
+package.json
+package-lock.json
+node_modules/
+yarn.lock
+
+# Frontend source files
+src/
+public/
+assets/
+components/
+*.tsx
+*.ts
+*.jsx
+*.js
+
+# Build outputs
+dist/
+build/
+out/
+
+# Frontend configuration
+vite.config.ts
+tsconfig.json
+.eslintrc
+.stylelintrc
+
+# Frontend documentation
+frontend/
+frontend_docs/
+
+# Ignore mobile client HTML files (they're for local use)
+mobile_client.html
+enhanced_mobile_client.html
+MOBILE_INSTRUCTIONS.html
+
+# Ignore deployment scripts
+deploy_railway.sh
+SIMPLE_DEPLOYMENT.md
+MOBILE_DEPLOYMENT.md
+README_DEPLOYMENT.md

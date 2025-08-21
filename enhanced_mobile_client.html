@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Synapse Mobile Client - AI Chat Assistant">
+    <title>Synapse Mobile Client</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #00c9ff 0%, #92fe9d 100%);
+            --background-dark: #121212;
+            --surface-dark: #1e1e1e;
+            --surface-light: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --success: #4caf50;
+            --error: #f44336;
+            --warning: #ff9800;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: var(--background-dark);
+            color: var(--text-primary);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Responsive container that adapts to screen size */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        /* Header styling */
+        .app-header {
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        .header-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Main content area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 16px;
+            gap: 16px;
+        }
+
+        /* Card component */
+        .card {
+            background: var(--surface-dark);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        /* Form elements */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        /* Button styling */
+        .btn {
+            padding: 14px 24px;
+            border-radius: 12px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--surface-light);
+            color: var(--text-primary);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Status indicators */
+        .status {
+            padding: 12px;
+            border-radius: 12px;
+            margin: 12px 0;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .status-success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .status-error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid var(--error);
+            color: var(--error);
+        }
+
+        /* Chat container */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 8px;
+        }
+
+        /* Message styling */
+        .message {
+            max-width: 85%;
+            padding: 16px;
+            border-radius: 18px;
+            line-height: 1.5;
+            position: relative;
+            animation: messageAppear 0.3s ease-out;
+        }
+
+        @keyframes messageAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: var(--primary-gradient);
+            border-bottom-right-radius: 6px;
+        }
+
+        .ai-message {
+            align-self: flex-start;
+            background: var(--surface-light);
+            border-bottom-left-radius: 6px;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .persona-icon {
+            font-size: 1.2rem;
+        }
+
+        /* Input area */
+        .input-area {
+            padding: 16px;
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-container {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            font-size: 1rem;
+            resize: none;
+            min-height: 56px;
+            max-height: 150px;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        .send-button {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        /* Personas grid */
+        .personas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .persona-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .persona-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .persona-card.selected {
+            background: var(--primary-gradient);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .persona-card-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .persona-card-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Templates grid */
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .template-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .template-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .template-card-name {
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+
+        .template-card-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            align-self: flex-start;
+            background: var(--surface-light);
+            padding: 16px;
+            border-radius: 18px;
+            border-bottom-left-radius: 6px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--text-secondary);
+            border-radius: 50%;
+            margin: 0 3px;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+
+        /* Foldable device support */
+        @media (min-width: 840px) and (min-height: 600px) {
+            .app-container {
+                max-width: 500px;
+                margin: 20px auto;
+                border-radius: 20px;
+                height: 90vh;
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            }
+            
+            .app-header {
+                border-top-left-radius: 20px;
+                border-top-right-radius: 20px;
+            }
+        }
+
+        /* Large screen (foldable unfolded) */
+        @media (min-width: 1000px) {
+            .personas-grid, .templates-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+            
+            .message {
+                max-width: 75%;
+            }
+        }
+
+        /* Ultra large screens */
+        @media (min-width: 1400px) {
+            .app-container {
+                max-width: 600px;
+            }
+            
+            .message {
+                max-width: 70%;
+            }
+        }
+
+        /* Small phones */
+        @media (max-width: 350px) {
+            .personas-grid, .templates-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .card {
+                padding: 16px;
+            }
+        }
+
+        /* Orientation changes */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .app-header {
+                padding: 12px;
+            }
+            
+            .card-title {
+                font-size: 1rem;
+            }
+            
+            .message {
+                max-width: 90%;
+                padding: 12px;
+            }
+        }
+
+        /* Safe area insets for notched devices */
+        @supports (padding: max(0px)) {
+            .app-header {
+                padding-top: max(16px, env(safe-area-inset-top));
+                padding-left: max(16px, env(safe-area-inset-left));
+                padding-right: max(16px, env(safe-area-inset-right));
+            }
+            
+            .input-area {
+                padding-bottom: max(16px, env(safe-area-inset-bottom));
+                padding-left: max(16px, env(safe-area-inset-left));
+                padding-right: max(16px, env(safe-area-inset-right));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1 class="header-title">🤖 Synapse Mobile</h1>
+        </header>
+        
+        <main class="main-content">
+            <div class="card">
+                <h2 class="card-title">🌐 Backend Connection</h2>
+                <div class="form-group">
+                    <label class="form-label" for="backendUrl">Backend URL</label>
+                    <input 
+                        type="url" 
+                        id="backendUrl" 
+                        class="form-input" 
+                        placeholder="https://your-app.onrender.com"
+                        value="https://your-app.onrender.com"
+                    >
+                </div>
+                <button id="connectBtn" class="btn btn-primary">
+                    🔌 Connect to Backend
+                </button>
+                <div id="connectionStatus"></div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">💬 Chat</h2>
+                <div class="chat-container" id="chatContainer">
+                    <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                        <p>Connect to your Synapse backend to start chatting</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">👤 Personas</h2>
+                <div class="personas-grid" id="personasContainer">
+                    <!-- Personas will be loaded here -->
+                </div>
+            </div>
+        </main>
+        
+        <div class="input-area">
+            <div class="input-container">
+                <textarea 
+                    id="messageInput" 
+                    class="message-input" 
+                    placeholder="Type your message..." 
+                    disabled
+                ></textarea>
+                <button id="sendBtn" class="btn btn-primary send-button" disabled>
+                    ➤
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const backendUrlInput = document.getElementById('backendUrl');
+        const connectBtn = document.getElementById('connectBtn');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const personasContainer = document.getElementById('personasContainer');
+        
+        // State
+        let isConnected = false;
+        let selectedPersona = 'synapse';
+        let personas = [];
+        
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set up event listeners
+            connectBtn.addEventListener('click', connectToBackend);
+            sendBtn.addEventListener('click', sendMessage);
+            
+            messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (isConnected) {
+                        sendMessage();
+                    }
+                }
+            });
+            
+            messageInput.addEventListener('input', adjustTextareaHeight);
+            
+            // Handle window resize for dynamic adjustments
+            window.addEventListener('resize', handleResize);
+            
+            // Detect device type and adjust accordingly
+            detectDeviceType();
+        });
+        
+        // Connect to backend
+        async function connectToBackend() {
+            const backendUrl = backendUrlInput.value.trim();
+            
+            if (!backendUrl) {
+                showStatus('Please enter a backend URL', 'error');
+                return;
+            }
+            
+            try {
+                // Update UI state
+                connectBtn.disabled = true;
+                connectBtn.innerHTML = '🔄 Connecting...';
+                
+                // Test connection
+                const healthResponse = await fetch(`${backendUrl}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!healthResponse.ok) {
+                    throw new Error(`HTTP ${healthResponse.status}: ${healthResponse.statusText}`);
+                }
+                
+                const healthData = await healthResponse.json();
+                
+                if (healthData.status !== 'ok') {
+                    throw new Error('Backend health check failed');
+                }
+                
+                // Load personas
+                const personasResponse = await fetch(`${backendUrl}/api/personas`);
+                if (!personasResponse.ok) {
+                    throw new Error(`Failed to load personas: ${personasResponse.status}`);
+                }
+                
+                personas = await personasResponse.json();
+                
+                // Update UI
+                isConnected = true;
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                
+                // Populate personas
+                populatePersonas();
+                
+                // Add welcome message
+                addMessage('ai', 'Hello! I\'m Synapse, your AI assistant. How can I help you today?', 'Synapse', '🧠');
+                
+                showStatus('✅ Connected successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Connection error:', error);
+                isConnected = false;
+                messageInput.disabled = true;
+                sendBtn.disabled = true;
+                showStatus(`❌ Connection failed: ${error.message}`, 'error');
+            } finally {
+                connectBtn.disabled = false;
+                connectBtn.innerHTML = '🔌 Connect to Backend';
+            }
+        }
+        
+        // Populate personas in selector
+        function populatePersonas() {
+            personasContainer.innerHTML = '';
+            
+            personas.forEach(persona => {
+                const personaElement = document.createElement('div');
+                personaElement.className = `persona-card ${persona.id === selectedPersona ? 'selected' : ''}`;
+                personaElement.innerHTML = `
+                    <div class="persona-card-icon">${persona.icon}</div>
+                    <div class="persona-card-name">${persona.name}</div>
+                `;
+                personaElement.addEventListener('click', () => {
+                    selectedPersona = persona.id;
+                    document.querySelectorAll('.persona-card').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    personaElement.classList.add('selected');
+                });
+                personasContainer.appendChild(personaElement);
+            });
+        }
+        
+        // Send message
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+            if (!isConnected) {
+                showStatus('Please connect to backend first', 'error');
+                return;
+            }
+            
+            // Get current persona
+            const currentPersona = personas.find(p => p.id === selectedPersona) || personas[0];
+            
+            // Add user message to chat
+            addMessage('user', message);
+            
+            // Clear input and adjust height
+            messageInput.value = '';
+            adjustTextareaHeight();
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                // In a real implementation, you would call your chat endpoint here
+                // For now, we'll simulate a response with a delay
+                
+                // Simulate network delay
+                await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+                
+                // Remove typing indicator
+                removeTypingIndicator();
+                
+                // Generate simulated response based on persona
+                const response = generateResponse(message, currentPersona);
+                addMessage('ai', response, currentPersona.name, currentPersona.icon);
+                
+            } catch (error) {
+                removeTypingIndicator();
+                addMessage('ai', `Sorry, I encountered an error: ${error.message}`, 'System', '⚠️');
+            }
+        }
+        
+        // Generate simulated response
+        function generateResponse(message, persona) {
+            const responses = {
+                'synapse': [
+                    `I understand you're asking about "${message}". As Synapse, I can help with that. What specifically would you like to know?`,
+                    `That's an interesting question about "${message.substring(0, 20)}...". As your core AI assistant, I'd suggest considering multiple perspectives on this topic.`,
+                    `Thanks for your message about "${message.substring(0, 20)}...". I'm analyzing your request and will provide a comprehensive response shortly.`
+                ],
+                'tutor': [
+                    `Great question about "${message}"! As your AI Tutor, let me break this down simply. First, we need to understand the basics...`,
+                    `I see you're interested in "${message}". As a tutor, I believe in explaining concepts clearly. Let's approach this step by step.`,
+                    `That's a wonderful inquiry about "${message}"! As your patient tutor, I'll explain this concept in digestible parts.`
+                ],
+                'content-creator': [
+                    `Interesting! You want to explore "${message}". As a Content Creator, I can help craft engaging material around this topic. Let's think about the angle...`,
+                    `Ooh, "${message}" is a fantastic subject! As your creative assistant, I can generate compelling content formats for this. What type of content were you thinking?`,
+                    `I love that idea about "${message}"! As a creative mind, I can help you develop unique content strategies around this theme.`
+                ]
+            };
+            
+            const personaResponses = responses[persona.id] || responses['synapse'];
+            return personaResponses[Math.floor(Math.random() * personaResponses.length)];
+        }
+        
+        // Add message to chat
+        function addMessage(sender, text, personaName = null, personaIcon = null) {
+            // Clear initial message if present
+            if (chatContainer.firstElementChild && 
+                chatContainer.firstElementChild.textContent.includes('Connect to your Synapse backend')) {
+                chatContainer.innerHTML = '';
+            }
+            
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${sender}-message`;
+            
+            if (sender === 'ai' && personaName) {
+                messageElement.innerHTML = `
+                    <div class="message-header">
+                        <span class="persona-icon">${personaIcon || '🤖'}</span>
+                        ${personaName}
+                    </div>
+                    <div>${text}</div>
+                `;
+            } else {
+                messageElement.innerHTML = text;
+            }
+            
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // Show typing indicator
+        function showTypingIndicator() {
+            removeTypingIndicator();
+            
+            const typingElement = document.createElement('div');
+            typingElement.className = 'typing-indicator';
+            typingElement.id = 'typingIndicator';
+            typingElement.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            `;
+            
+            chatContainer.appendChild(typingElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // Remove typing indicator
+        function removeTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+        
+        // Adjust textarea height based on content
+        function adjustTextareaHeight() {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 150) + 'px';
+        }
+        
+        // Show status message
+        function showStatus(message, type) {
+            connectionStatus.innerHTML = `<div class="status status-${type}">${message}</div>`;
+            
+            // Auto-hide success messages after 3 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    connectionStatus.innerHTML = '';
+                }, 3000);
+            }
+        }
+        
+        // Handle window resize for dynamic adjustments
+        function handleResize() {
+            // Adjust chat container scroll
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Adjust textarea if needed
+            adjustTextareaHeight();
+            
+            // Log screen info for debugging
+            console.log(`Screen: ${window.screen.width}x${window.screen.height}`);
+            console.log(`Window: ${window.innerWidth}x${window.innerHeight}`);
+        }
+        
+        // Detect device type and adjust accordingly
+        function detectDeviceType() {
+            const isFoldable = window.screen.width >= 840 && window.screen.height >= 600;
+            const isLargeScreen = window.innerWidth >= 1000;
+            const isSmallScreen = window.innerWidth <= 350;
+            
+            console.log(`Device type: ${isFoldable ? 'Foldable/Large' : 'Phone'}`);
+            console.log(`Screen size: ${window.innerWidth}x${window.innerHeight}`);
+            
+            // Apply dynamic adjustments based on screen size
+            document.body.classList.toggle('large-screen', isLargeScreen);
+            document.body.classList.toggle('small-screen', isSmallScreen);
+        }
+        
+        // Handle device orientation changes
+        window.addEventListener('orientationchange', () => {
+            // Small delay to allow for UI adjustments
+            setTimeout(() => {
+                handleResize();
+                detectDeviceType();
+            }, 100);
+        });
+    </script>
+</body>
+</html>

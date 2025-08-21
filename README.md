@@ -1,15 +1,48 @@
-# Synapse Backend - Flask Integration
+# Synapse Backend with Mobile Client
 
-This is a Flask-based backend server that integrates Flowise and LangGraph functionality with a RESTful API interface.
+A Flask-based backend server that integrates Flowise and LangGraph functionality with a RESTful API interface, plus a responsive mobile client that works on all devices including foldable phones.
 
 ## Features
 
+### Backend Features
 - **Flowise Integration**: Manage and execute Flowise workflows
 - **LangGraph Integration**: Manage and execute LangGraph agents
 - **Agent Orchestration**: Unified interface for both Flowise and LangGraph
 - **Chat Interface**: Support for autopilot and co-pilot modes
 - **Personas**: Pre-configured AI personalities
 - **Templates**: Ready-to-use content templates
+
+### Mobile Client Features
+- **Universal Device Support**: Works on all mobile devices including foldable phones
+- **Responsive Design**: Automatically adjusts to any screen size
+- **Portrait and Landscape**: Optimized for both orientations
+- **Touch-Friendly Interface**: Appropriate sizing for all touch interactions
+- **Cyberpunk Aesthetics**: Dark theme with gradient accents
+
+## Quick Start
+
+### 1. Deploy to Render (Recommended)
+1. Fork this repository to your GitHub account
+2. Go to [render.com](https://render.com) and sign up with GitHub
+3. Click "New+" and select "Web Service"
+4. Connect your forked repository
+5. Fill in these settings:
+   - Name: `synapse-backend`
+   - Region: Choose the one closest to you
+   - Branch: `main`
+   - Runtime: `Python 3`
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `gunicorn main:app`
+6. Click "Create Web Service"
+7. Wait 5-10 minutes for deployment to complete
+8. Note the URL provided (e.g., `https://synapse-backend-xxxx.onrender.com`)
+
+### 2. Use the Mobile Client
+1. Email `enhanced_mobile_client.html` to yourself
+2. Open the email on your mobile device
+3. Download and open the HTML file in any mobile browser
+4. Enter your deployed backend URL
+5. Start chatting with different AI personas!
 
 ## API Endpoints
 
@@ -48,172 +81,64 @@ This is a Flask-based backend server that integrates Flowise and LangGraph funct
 ### Chat Endpoints
 - `POST /api/chat` - Handle chat messages with autopilot/copilot support
 
-## Quick Start
+## Personas
 
-### 1. Install Dependencies
-```bash
-python run.py --install
-```
+The system comes with several pre-configured personas:
+- **Synapse**: Your core AI assistant
+- **AI Tutor**: Explains complex topics simply
+- **Content Creator**: Generates creative text formats
 
-### 2. Start the Server
-```bash
-# Basic start
-python run.py
+## Mobile Client Usage
 
-# With debug mode
-python run.py --debug
+The mobile client ([enhanced_mobile_client.html](file:///home/ali-asghar-rao/Documents/Simple%20Backend%20Design%20for%20Chatbot%20Hub%20(2)/enhanced_mobile_client.html)) is designed to work on:
+- Regular smartphones (all sizes)
+- Phablets
+- Foldable devices (both folded and unfolded states)
+- Tablets
 
-# Custom port
-python run.py --port 8080
-
-# Install requirements and start
-python run.py --install --debug
-```
-
-### 3. Test the Integration
-```bash
-# Run integration tests
-python test_integration.py
-
-# Run tests with server auto-start
-python run.py --test
-```
-
-## Usage Examples
-
-### Basic Chat
-```bash
-curl -X POST http://localhost:8000/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Hello, how are you?", "personaId": "synapse"}'
-```
-
-### Autopilot Mode (Flowise)
-```bash
-curl -X POST http://localhost:8000/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "I want to write a blog post",
-    "autopilotMode": true,
-    "flowId": "blog-post-generator"
-  }'
-```
-
-### Co-pilot Mode (LangGraph)
-```bash
-curl -X POST http://localhost:8000/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "Help me debug this code",
-    "copilotMode": true,
-    "graphId": "code-debugger"
-  }'
-```
-
-### List Available Flows
-```bash
-curl http://localhost:8000/api/flows
-```
-
-### Execute a Flow
-```bash
-curl -X POST http://localhost:8000/api/flows/flow-id/execute \
-  -H "Content-Type: application/json" \
-  -d '{"input": "test input"}'
-```
-
-## Configuration
-
-### Environment Variables
-- `FLASK_ENV`: Set to `development` or `production`
-- `PORT`: Server port (default: 8000)
-- `HOST`: Server host (default: 0.0.0.0)
-
-### Logging
-Logs are written to `app.log` in the project root directory.
+### Features
+- Automatic layout adjustment based on screen size
+- Support for device orientation changes
+- Safe area handling for notched devices
+- Dynamic persona selection
+- Real-time chat interface
 
 ## Development
 
-### Project Structure
-```
-.
-├── main.py              # Main Flask application
-├── agent_routes.py      # API routes for agents
-├── personas.py          # Persona definitions
-├── test_integration.py  # Integration tests
-├── run.py              # Server runner script
-├── requirements.txt    # Python dependencies
-└── README.md          # This file
-```
-
-### Adding New Endpoints
-1. Add routes to `agent_routes.py` for agent-related functionality
-2. Add routes to `main.py` for general API endpoints
-3. Update this README with new endpoints
-4. Add tests to `test_integration.py`
-
-## Testing
-
-### Manual Testing
+### Running Locally
 ```bash
-# Start server
-python run.py --debug
+# Install dependencies
+pip install -r requirements.txt
 
-# In another terminal, test endpoints
+# Run the server
+python run.py [--debug] [--port PORT]
+```
+
+### Testing
+```bash
+# Run integration tests
 python test_integration.py
 ```
 
-### Automated Testing
-```bash
-# Run all tests
-python test_integration.py
+## Deployment
 
-# Run with server auto-start
-python run.py --test
-```
+### Render Deployment
+Follow the quick start instructions above.
+
+### Environment Variables
+For production deployments, you may need to set:
+- `PORT`: Port to bind to (provided by Render)
+- `HOST`: Host to bind to (provided by Render)
 
 ## Troubleshooting
 
 ### Common Issues
+1. **Application Error on Render**: Check logs in Render dashboard
+2. **Can't Connect from Mobile**: Verify URL uses https:// and is accessible
+3. **Personas Not Loading**: Check that backend is running and accessible
 
-1. **Port already in use**
-   ```bash
-   python run.py --port 8080
-   ```
-
-2. **Missing dependencies**
-   ```bash
-   python run.py --install
-   ```
-
-3. **CORS issues**
-   - CORS is enabled for all origins in development
-   - Configure CORS in production as needed
-
-4. **Module not found**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-## Production Deployment
-
-### Using Gunicorn
-```bash
-pip install gunicorn
-gunicorn main:app -b 0.0.0.0:8000 --workers=4
-```
-
-### Using Docker
-```dockerfile
-FROM python:3.9-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-EXPOSE 8000
-CMD ["python", "run.py", "--host", "0.0.0.0", "--port", "8000"]
-```
+### Support
+For issues, check the [Render documentation](https://render.com/docs) or open an issue on this repository.
 
 ## License
-
-MIT License - see LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
